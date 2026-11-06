@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any
 
 from starlette.applications import Starlette
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import HTMLResponse, JSONResponse
 from starlette.routing import Route
+
+_FILESYSTEMS_HTML = (Path(__file__).resolve().parent / "filesystems.html").read_text(encoding="utf-8")
 
 from awam_resource_gateway.gateway import ResourceGateway
 
@@ -20,6 +23,9 @@ def create_app(gateway: ResourceGateway | None = None) -> Starlette:
 
     async def health(_: Request) -> JSONResponse:
         return _json({"ok": True, "service": "awam-resource-gateway"})
+
+    async def filesystems_page(_: Request) -> HTMLResponse:
+        return HTMLResponse(_FILESYSTEMS_HTML)
 
     async def backends(_: Request) -> JSONResponse:
         return _json({"backends": [b.to_dict() for b in gw.backends()]})
@@ -79,6 +85,8 @@ def create_app(gateway: ResourceGateway | None = None) -> Starlette:
 
     routes = [
         Route("/health", health),
+        Route("/", filesystems_page),
+        Route("/filesystems", filesystems_page),
         Route("/api/backends", backends),
         Route("/api/list", res_list),
         Route("/api/stat", res_stat),

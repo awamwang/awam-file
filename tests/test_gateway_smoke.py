@@ -38,6 +38,16 @@ def test_list_knowledge():
         assert "logseq-main" in names or len(names) >= 0
 
 
+def test_filesystems_page():
+    from starlette.testclient import TestClient
+
+    from awam_resource_gateway.http_api import create_app
+
+    response = TestClient(create_app()).get("/filesystems")
+    assert response.status_code == 200
+    assert "已接入的文件系统" in response.text
+
+
 def test_sigma_shape():
     data = ResourceGateway().sigma_dir_contents("awam://root/")
     assert "entries" in data

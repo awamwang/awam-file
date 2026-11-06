@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>已接入的文件系统</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { margin: 0; font: 15px/1.5 "Segoe UI", sans-serif; }
+    main { max-width: 960px; margin: 0 auto; padding: 32px 20px 64px; }
+    h1 { font-size: 1.4rem; font-weight: 650; margin: 0 0 8px; }
+    p.lead { margin: 0 0 20px; opacity: 0.75; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #8884; vertical-align: top; }
+    th { font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.65; }
+    code { font-size: 0.86em; }
+    .ok, .no { display: inline-block; min-width: 2.5em; font-weight: 650; }
+    .ok { color: #0a7a32; }
+    .no { color: #a33; }
+    .err { color: #a33; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>已接入的文件系统</h1>
+    <p class="lead">网关里已经接上的后端。状态来自本次发现，不代表目录里有哪些个人路径。</p>
+    <p id="status">正在读取…</p>
+    <table>
+      <thead>
+        <tr><th>名称</th><th>入口</th><th>当前</th><th>信息</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </main>
+  <script>
+    const status = document.getElementById("status");
+    const rows = document.getElementById("rows");
+    fetch("/api/backends")
+      .then((resp) => {
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        return resp.json();
+      })
+      .then((data) => {
+        const items = data.backends || [];
+        status.textContent = items.length + " 个已接入后端";
+        for (const item of items) {
+          const tr = document.createElement("tr");
+          const present = item.healthy ? "在" : "不在";
+          const klass = item.healthy ? "ok" : "no";
+          tr.innerHTML =
+            "<td>" + escapeHtml(item.name || item.id) + "</td>" +
+            "<td><code>awam://" + escapeHtml(item.id) + "/</code></td>" +
+            "<td class=\"" + klass + "\">" + present + "</td>" +
+            "<td>" + escapeHtml(item.detail || item.description || "") + "</td>";
+          rows.appendChild(tr);
+        }
+      })
+      .catch((err) => {
+        status.textContent = "读取失败：" + err.message;
+        status.className = "err";
+      });
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+  </script>
+</body>
+</html>

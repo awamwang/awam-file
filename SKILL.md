@@ -21,6 +21,7 @@ python -m awam_resource_gateway mcp
 
 # Sigma / 脚本：本机 HTTP（默认 127.0.0.1:18787）
 python -m awam_resource_gateway http
+# 已接入文件系统页面：http://127.0.0.1:18787/filesystems
 
 # CLI
 python -m awam_resource_gateway backends
