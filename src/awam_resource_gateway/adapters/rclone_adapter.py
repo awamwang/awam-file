@@ -9,6 +9,7 @@ from awam_resource_gateway.adapters.base import Adapter
 from awam_resource_gateway.models import (
     BackendInfo,
     DirListing,
+    ReadResult,
     ResolveResult,
     ResourceEntry,
     StatResult,
@@ -59,7 +60,7 @@ class RcloneAdapter(Adapter):
                 name=self.name,
                 description=self.description,
                 healthy=result.returncode == 0,
-                capabilities=["list", "stat", "resolve"],
+                capabilities=["list", "stat", "read", "resolve"],
                 detail=detail,
             )
         except (OSError, subprocess.TimeoutExpired) as exc:
@@ -195,6 +196,57 @@ class RcloneAdapter(Adapter):
                 ),
             )
         return StatResult(entry=None, error=self_listing.error or "Not found")
+
+    def read(self, uri: AwamUri, max_bytes: int | None = None) -> ReadResult:
+        spec = self._remote_spec(uri)
+        if not spec or spec.endswith(":"):
+            return ReadResult(uri=uri.to_string(), error="Not a file")
+        exe = self._rclone()
+        if not exe:
+            return ReadResult(uri=uri.to_string(), error="rclone not found on PATH")
+        limit = max_bytes or self.config.read_max_bytes
+        try:
+            proc = subprocess.Popen(
+                [exe, "cat", spec],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        except OSError as exc:
+            return ReadResult(uri=uri.to_string(), error=str(exc))
+        assert proc.stdout is not None
+        try:
+            data = proc.stdout.read(limit + 1)
+        except OSError as exc:
+            proc.kill()
+            proc.wait(timeout=5)
+            return ReadResult(uri=uri.to_string(), error=str(exc))
+        truncated = len(data) > limit
+        if truncated:
+            data = data[:limit]
+            proc.kill()
+        stderr = b""
+        if proc.stderr is not None:
+            try:
+                stderr = proc.stderr.read()
+            except OSError:
+                stderr = b""
+        try:
+            proc.wait(timeout=20)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait(timeout=5)
+        if proc.returncode not in (0, None) and not data:
+            message = stderr.decode("utf-8", errors="replace").strip() or "rclone cat failed"
+            return ReadResult(uri=uri.to_string(), error=message)
+        try:
+            text = data.decode("utf-8")
+        except UnicodeDecodeError:
+            return ReadResult(
+                uri=uri.to_string(),
+                truncated=truncated,
+                error="Binary file; use rclone copyto to a local path",
+            )
+        return ReadResult(uri=uri.to_string(), content=text, truncated=truncated)
 
     def resolve(self, uri: AwamUri) -> ResolveResult:
         spec = self._remote_spec(uri)

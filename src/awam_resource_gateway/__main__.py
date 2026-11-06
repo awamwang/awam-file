@@ -32,7 +32,10 @@ def main(argv: list[str] | None = None) -> None:
     dopus_p = sub.add_parser("open-dopus", help="Open resolved path in Directory Opus")
     dopus_p.add_argument("uri")
 
-    backends_p = sub.add_parser("backends", help="Show backends")
+    push_p = sub.add_parser("push-to-downloads", help="Push a Prowlarr item URI to qBittorrent")
+    push_p.add_argument("uri")
+
+    sub.add_parser("backends", help="Show backends")
 
     args = parser.parse_args(argv)
     config = load_config()
@@ -72,6 +75,10 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.cmd == "open-dopus":
         print(json.dumps(gw.open_in_dopus(args.uri), ensure_ascii=False, indent=2))
+        return
+
+    if args.cmd == "push-to-downloads":
+        print(json.dumps(gw.push_to_downloads(args.uri), ensure_ascii=False, indent=2))
         return
 
     if args.cmd == "backends":

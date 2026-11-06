@@ -59,5 +59,13 @@ def res_open_in_dopus(uri: str) -> str:
     return _dump(_gateway.open_in_dopus(uri))
 
 
+@mcp.tool(
+    name="res_push_to_downloads",
+    description="Push one awam://prowlarr/item URI to qBittorrent",
+)
+def res_push_to_downloads(uri: str) -> str:
+    return _dump(_gateway.push_to_downloads(uri))
+
+
 async def run_stdio() -> None:
     await mcp.run_stdio_async()

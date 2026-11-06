@@ -23,7 +23,15 @@ awam://<backend>[/<path>][?<query>]
 | `rclone` | `awam://rclone/mysftp/var/www` | rclone remote（无挂载） |
 | `knowledge` | `awam://knowledge/logseq-main/pages` | `G:\Knowledge\data\` 下图谱 |
 | `downloads` | `awam://downloads/qb/` | qBittorrent 任务树 |
-| `prowlarr` | `awam://prowlarr/search?q=ubuntu` | 索引搜索（未安装时 unavailable） |
+| `prowlarr` | `awam://prowlarr/search?q=ubuntu` | 索引搜索。当前只使用搜索结果，不把结果送去下载 |
+| `smb` | `awam://smb/` | 已映射共享与 `AWAM_SMB_ROOTS`，条目转到 `awam://local/unc/...` |
+| `volumes` | `awam://volumes/images` | 已附加 VHD/ISO 与 `awam://volumes/drives` 盘符。不执行挂载 |
+| `places` | `awam://places/recycle` | `recycle` / `recent` / `downloads` |
+| `hf` | `awam://hf/cache/` | 本地 hub；`awam://hf/remote?q=` 走 `HF_ENDPOINT` |
+| `wsl` | `awam://wsl/<distro>/home` | `\\wsl.localhost\<distro>`。停止的发行版不会被启动 |
+| `docker` | `awam://docker/<volume>` | 引擎未运行时 unavailable。VM 内挂载点只返回元数据 |
+| `kopia` | `awam://kopia/` | CLI 不在或仓库未连接时 unavailable。不挂载快照 |
+| `filehistory` | `awam://filehistory/` | 未启用文件历史时 unavailable |
 
 ## 操作语义
 

@@ -114,23 +114,27 @@ class ProwlarrAdapter(Adapter):
             for item in data[:limit] if isinstance(data, list) else []:
                 title = item.get("title") or item.get("fileName") or "result"
                 guid = item.get("guid") or item.get("downloadUrl") or title
+                download_url = str(item.get("downloadUrl") or "")
+                magnet_url = str(item.get("magnetUrl") or "")
+                indexer = str(item.get("indexer") or "")
                 hits.append(
                     SearchHit(
                         entry=ResourceEntry(
                             name=str(title)[:200],
-                            uri=AwamUri(
-                                backend="prowlarr",
-                                path="search",
-                                query={"q": [query]},
-                            ).to_string(),
+                            uri=prowlarr_item_uri(
+                                title=str(title),
+                                download_url=download_url,
+                                magnet_url=magnet_url,
+                                indexer=indexer,
+                            ),
                             is_dir=False,
                             is_file=True,
                             size=int(item.get("size") or 0),
                             extra={
                                 "guid": guid,
-                                "indexer": item.get("indexer"),
-                                "downloadUrl": item.get("downloadUrl"),
-                                "magnetUrl": item.get("magnetUrl"),
+                                "indexer": indexer,
+                                "downloadUrl": download_url,
+                                "magnetUrl": magnet_url,
                             },
                         ),
                         score=1.0,
@@ -142,6 +146,21 @@ class ProwlarrAdapter(Adapter):
             return []
 
     def stat(self, uri: AwamUri) -> StatResult:
+        if uri.path == "item":
+            title = _query_one(uri, "title") or "result"
+            return StatResult(
+                entry=ResourceEntry(
+                    name=title,
+                    uri=uri.to_string(),
+                    is_dir=False,
+                    is_file=True,
+                    extra={
+                        "indexer": _query_one(uri, "indexer"),
+                        "downloadUrl": _query_one(uri, "dl"),
+                        "magnetUrl": _query_one(uri, "magnet"),
+                    },
+                ),
+            )
         return StatResult(
             entry=ResourceEntry(
                 name="prowlarr",
@@ -152,8 +171,37 @@ class ProwlarrAdapter(Adapter):
         )
 
     def resolve(self, uri: AwamUri) -> ResolveResult:
+        if uri.path == "item":
+            download_url = _query_one(uri, "dl")
+            magnet_url = _query_one(uri, "magnet")
+            if not download_url and not magnet_url:
+                return ResolveResult(uri=uri.to_string(), error="Result has no magnet or download URL")
+            return ResolveResult(
+                uri=uri.to_string(),
+                action="push_to_downloads",
+                action_args={"downloadUrl": download_url, "magnetUrl": magnet_url},
+                error=None,
+            )
         return ResolveResult(
             uri=uri.to_string(),
             action="prowlarr_search",
-            error="Search results are remote; send magnet/url to qBittorrent manually",
+            error="Search results are remote; push a result item to qBittorrent",
         )
+
+
+def prowlarr_item_uri(*, title: str, download_url: str, magnet_url: str, indexer: str) -> str:
+    query: dict[str, list[str]] = {}
+    if title:
+        query["title"] = [title[:200]]
+    if download_url:
+        query["dl"] = [download_url]
+    if magnet_url:
+        query["magnet"] = [magnet_url]
+    if indexer:
+        query["indexer"] = [indexer]
+    return AwamUri(backend="prowlarr", path="item", query=query).to_string()
+
+
+def _query_one(uri: AwamUri, key: str) -> str:
+    values = uri.query.get(key) or []
+    return values[0] if values else ""

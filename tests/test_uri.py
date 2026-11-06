@@ -33,3 +33,17 @@ def test_roundtrip_local():
     parsed = parse_awam_uri(u)
     assert parsed.backend == "local"
     assert "logseq-main" in parsed.path
+
+
+def test_unc_roundtrip():
+    uri = parse_awam_uri(r"\\server\share\a")
+    assert uri.backend == "local"
+    assert uri.path == "unc/server/share/a"
+    assert uri_to_local_path(uri) == r"\\server\share\a"
+    again = parse_awam_uri(local_path_to_uri(r"\\server\share\a"))
+    assert again.path == "unc/server/share/a"
+
+
+def test_unc_scheme():
+    uri = parse_awam_uri("awam://local/unc/nas/media")
+    assert uri_to_local_path(uri) == r"\\nas\media"

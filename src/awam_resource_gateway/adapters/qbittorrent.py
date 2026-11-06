@@ -237,3 +237,18 @@ class QBittorrentAdapter(Adapter):
             uri=uri.to_string(),
             error="No local save path (is WebUI enabled?)",
         )
+
+    def add_url(self, url: str) -> dict[str, Any]:
+        """Add a magnet or HTTP URL. Does not start a download when the call fails."""
+        target = (url or "").strip()
+        if not target:
+            return {"ok": False, "error": "Empty download URL"}
+        try:
+            client = self._get_client()
+            resp = client.post("/api/v2/torrents/add", data={"urls": target}, timeout=20.0)
+        except httpx.HTTPError as exc:
+            return {"ok": False, "error": str(exc)}
+        body = (resp.text or "").strip()
+        if resp.status_code == 200:
+            return {"ok": True, "url": target, "detail": body or "Ok."}
+        return {"ok": False, "error": f"HTTP {resp.status_code}: {body[:300]}"}

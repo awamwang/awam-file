@@ -104,6 +104,12 @@ ssh user@host "rm /path/file"
 
 ## 6. 待办 / 下一步
 
-- [ ] 在开发机实测 rclone + SFTP 后端（config 文件 + 常用命令）
-- [ ] 如需挂载体验，对比 RaiDrive 免费版 vs rclone mount 的稳定性
-- [ ] 封装常用操作（copy/delete/sync/list）为项目内脚本或 AI 工具调用
+- [x] 开发机已能通过 `rclone listremotes` 发现已配置 remote。具体 remote 名称、地址和密钥只留在本机 rclone 配置里
+- [x] WinFsp 已安装。`rclone mount` 与 RaiDrive 的稳定性对比仍未做
+- [ ] 封装 copy/delete/sync：网关已有通用 `rclone cat` 读，写操作仍不默认开放
+
+## 7. 2026-11-06 复核
+
+- 对端集合以本机 `rclone help backends` 为准，网关不维护白名单。常见协议包括 `sftp`、`smb`、`webdav`、`ftp`、`s3`（含 OSS 等兼容端点），以及 `crypt` / `alias` / `union`。
+- 新 remote 配好后由发现机制直接列出，不需要为每个对端改网关，也不把个人路径写进项目。
+- 自动化仍不依赖挂载。

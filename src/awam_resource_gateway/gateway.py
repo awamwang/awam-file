@@ -5,12 +5,20 @@ from pathlib import Path
 from typing import Any
 
 from awam_resource_gateway.adapters import (
+    DockerVolumesAdapter,
     EverythingAdapter,
+    FileHistoryAdapter,
+    HuggingFaceAdapter,
     KnowledgeAdapter,
+    KopiaAdapter,
     LocalAdapter,
+    PlacesAdapter,
     ProwlarrAdapter,
     QBittorrentAdapter,
     RcloneAdapter,
+    SmbAdapter,
+    VolumesAdapter,
+    WslAdapter,
 )
 from awam_resource_gateway.adapters.base import Adapter
 from awam_resource_gateway.config import GatewayConfig, load_config
@@ -36,6 +44,14 @@ class ResourceGateway:
             RcloneAdapter(self.config),
             QBittorrentAdapter(self.config),
             ProwlarrAdapter(self.config),
+            SmbAdapter(self.config),
+            VolumesAdapter(self.config),
+            PlacesAdapter(self.config),
+            HuggingFaceAdapter(self.config),
+            WslAdapter(self.config),
+            DockerVolumesAdapter(self.config),
+            KopiaAdapter(self.config),
+            FileHistoryAdapter(self.config),
         ]
         self._adapters: dict[str, Adapter] = {a.backend_id: a for a in adapters}
 
@@ -127,6 +143,23 @@ class ResourceGateway:
             return self._adapter(uri.backend).resolve(uri)
         except KeyError as exc:
             return ResolveResult(uri=uri_str, error=str(exc))
+
+    def push_to_downloads(self, uri_str: str) -> dict[str, Any]:
+        """Send a Prowlarr result magnet/URL to qBittorrent. Does not add anything else."""
+        uri = parse_awam_uri(uri_str)
+        if uri.backend != "prowlarr" or uri.path != "item":
+            return {"ok": False, "error": "Only awam://prowlarr/item URIs can be pushed"}
+        magnet = (uri.query.get("magnet") or [""])[0]
+        download = (uri.query.get("dl") or [""])[0]
+        target = magnet or download
+        if not target:
+            return {"ok": False, "error": "Result has no magnet or download URL"}
+        downloads = self._adapters.get("downloads")
+        add_url = getattr(downloads, "add_url", None)
+        if not callable(add_url):
+            return {"ok": False, "error": "downloads backend cannot add URLs"}
+        result: dict[str, Any] = add_url(target)
+        return result
 
     def open_in_dopus(self, uri_str: str) -> dict[str, Any]:
         resolved = self.resolve(uri_str)

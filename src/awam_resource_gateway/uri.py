@@ -75,7 +75,8 @@ def parse_awam_uri(value: str) -> AwamUri:
             if len(inner) >= 2 and inner[1] == ":":
                 return AwamUri(backend="local", path=_normalize_inner_path(inner), query={})
             if inner.startswith("//"):
-                return AwamUri(backend="local", path=_normalize_inner_path(inner), query={})
+                rest = _normalize_inner_path(inner.lstrip("/"))
+                return AwamUri(backend="local", path=f"unc/{rest}" if rest else "unc", query={})
             if inner.startswith("/"):
                 return AwamUri(backend="local", path=_normalize_inner_path(inner), query={})
         raise ValueError(f"Not an awam:// URI or filesystem path: {value!r}")
@@ -117,6 +118,10 @@ def join_uri(parent: str, name: str) -> str:
 
 def local_path_to_uri(path: str) -> str:
     inner = path.replace("\\", "/")
+    if inner.startswith("//"):
+        rest = _normalize_inner_path(inner.lstrip("/"))
+        inner_path = f"unc/{rest}" if rest else "unc"
+        return AwamUri(backend="local", path=inner_path, query={}).to_string()
     return AwamUri(backend="local", path=_normalize_inner_path(inner), query={}).to_string()
 
 
@@ -124,6 +129,13 @@ def uri_to_local_path(uri: AwamUri) -> str | None:
     if uri.backend != "local" or not uri.path:
         return None
     path = uri.path
+    if path == "unc":
+        return None
+    if path.startswith("unc/"):
+        rest = path[4:]
+        if not rest:
+            return None
+        return "\\\\" + rest.replace("/", "\\")
     # G:/foo -> G:\foo
     if len(path) >= 2 and path[1] == ":":
         return path.replace("/", "\\")

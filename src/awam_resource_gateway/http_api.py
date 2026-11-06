@@ -66,6 +66,17 @@ def create_app(gateway: ResourceGateway | None = None) -> Starlette:
         uri = request.query_params.get("uri") or "awam://root/"
         return _json(gw.sigma_dir_contents(uri))
 
+    async def push_to_downloads(request: Request) -> JSONResponse:
+        if request.method == "POST":
+            try:
+                body = await request.json()
+            except json.JSONDecodeError:
+                body = {}
+            uri = str(body.get("uri") or request.query_params.get("uri") or "")
+        else:
+            uri = request.query_params.get("uri") or ""
+        return _json(gw.push_to_downloads(uri))
+
     routes = [
         Route("/health", health),
         Route("/api/backends", backends),
@@ -76,6 +87,7 @@ def create_app(gateway: ResourceGateway | None = None) -> Starlette:
         Route("/api/resolve", res_resolve),
         Route("/api/open_in_dopus", open_dopus, methods=["GET", "POST"]),
         Route("/api/sigma/list", sigma_list),
+        Route("/api/push_to_downloads", push_to_downloads, methods=["GET", "POST"]),
     ]
     return Starlette(routes=routes)
 
