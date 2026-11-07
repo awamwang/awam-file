@@ -9,7 +9,7 @@ description: >-
 
 # awam-file — 统一资源网关
 
-一套 `awam://` URI + resource gateway，让 **Sigma File Manager（主）**、**Directory Opus（次）**、**AI（MCP）** 用相同语义访问本地盘、搜索、网盘、知识库与下载资源。
+一套 `awam://` URI + resource gateway，让 **Sigma File Manager（主）**、**A File Manager Providers（动态发现 `/api/backends`）**、**Directory Opus（次）**、**AI（MCP）** 用相同语义访问本地盘、搜索、网盘、知识库与下载资源。AFM 会过滤 `awam://local`（本机浏览仍走 Kernel Navigator）。
 
 ## 快速启动
 
