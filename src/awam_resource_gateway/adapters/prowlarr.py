@@ -8,12 +8,16 @@ from awam_resource_gateway.adapters.base import Adapter
 from awam_resource_gateway.models import (
     BackendInfo,
     DirListing,
+    QueryParam,
     ResolveResult,
     ResourceEntry,
     SearchHit,
     StatResult,
 )
 from awam_resource_gateway.uri import AwamUri
+
+# 搜索类目录的必填查询参数，缺参时返回软空态并供 UI 回填
+Q_PARAM = [QueryParam(key="q", label="Query", required=True)]
 
 
 class ProwlarrAdapter(Adapter):
@@ -59,22 +63,30 @@ class ProwlarrAdapter(Adapter):
             )
 
     def list(self, uri: AwamUri) -> DirListing:
-        if not uri.path or uri.path == "search":
+        if not uri.path:
+            return DirListing(
+                uri=uri.to_string(),
+                entries=[
+                    ResourceEntry(
+                        name="search",
+                        uri=AwamUri(backend="prowlarr", path="search", query={}).to_string(),
+                        is_dir=True,
+                        is_file=False,
+                        extra={"hint": "Use ?q=term"},
+                        required_query=Q_PARAM,
+                    ),
+                ],
+                backend=self.backend_id,
+            )
+        if uri.path == "search":
             query = uri.q
             if not query:
                 return DirListing(
                     uri=uri.to_string(),
-                    entries=[
-                        ResourceEntry(
-                            name="search",
-                            uri=AwamUri(backend="prowlarr", path="search", query={}).to_string(),
-                            is_dir=True,
-                            is_file=False,
-                            extra={"hint": "Use ?q=term"},
-                        ),
-                    ],
+                    entries=[],
                     backend=self.backend_id,
-                    error=None if not uri.path else "Missing query. Use awam://prowlarr/search?q=term",
+                    error=None,
+                    required_query=Q_PARAM,
                 )
             hits = self.search(query, limit=50)
             if not hits and not self.health().healthy:
@@ -83,11 +95,13 @@ class ProwlarrAdapter(Adapter):
                     entries=[],
                     backend=self.backend_id,
                     error="backend_unavailable: Prowlarr not running or API key missing",
+                    required_query=Q_PARAM,
                 )
             return DirListing(
                 uri=uri.to_string(),
                 entries=[h.entry for h in hits],
                 backend=self.backend_id,
+                required_query=Q_PARAM,
             )
         return DirListing(
             uri=uri.to_string(),

@@ -9,6 +9,7 @@ from awam_resource_gateway.adapters.base import Adapter
 from awam_resource_gateway.models import (
     BackendInfo,
     DirListing,
+    QueryParam,
     ReadResult,
     ResolveResult,
     ResourceEntry,
@@ -16,6 +17,9 @@ from awam_resource_gateway.models import (
     StatResult,
 )
 from awam_resource_gateway.uri import AwamUri
+
+# 搜索类目录的必填查询参数，缺参时返回软空态并供 UI 回填
+Q_PARAM = [QueryParam(key="q", label="Query", required=True)]
 
 
 class HuggingFaceAdapter(Adapter):
@@ -44,7 +48,7 @@ class HuggingFaceAdapter(Adapter):
         if not uri.path:
             return DirListing(
                 uri=uri.to_string(),
-                entries=[_virtual(uri, "cache"), _virtual(uri, "remote")],
+                entries=[_virtual(uri, "cache"), _virtual(uri, "remote", required_query=Q_PARAM)],
                 backend=self.backend_id,
             )
         section, _, rest = uri.path.partition("/")
@@ -55,10 +59,16 @@ class HuggingFaceAdapter(Adapter):
                     uri=uri.to_string(),
                     entries=[],
                     backend=self.backend_id,
-                    error="Use awam://hf/remote?q=term",
+                    error=None,
+                    required_query=Q_PARAM,
                 )
             hits = self.search(query, limit=30)
-            return DirListing(uri=uri.to_string(), entries=[hit.entry for hit in hits], backend=self.backend_id)
+            return DirListing(
+                uri=uri.to_string(),
+                entries=[hit.entry for hit in hits],
+                backend=self.backend_id,
+                required_query=Q_PARAM,
+            )
         if section != "cache":
             return DirListing(uri=uri.to_string(), entries=[], backend=self.backend_id, error=f"Unknown path: {section}")
         target = self._under_cache(rest)
@@ -208,11 +218,16 @@ def _display_name(dirname: str) -> str:
     return repo or dirname
 
 
-def _virtual(parent: AwamUri, name: str) -> ResourceEntry:
+def _virtual(
+    parent: AwamUri,
+    name: str,
+    required_query: list[QueryParam] | None = None,
+) -> ResourceEntry:
     return ResourceEntry(
         name=name,
         uri=parent.child(name).to_string(),
         is_dir=True,
         is_file=False,
         extra={"virtual": True},
+        required_query=required_query,
     )

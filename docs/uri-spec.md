@@ -46,6 +46,18 @@ awam://<backend>[/<path>][?<query>]
 
 破坏性写操作（远端删除等）需显式 `allow_destructive=true`。
 
+## requiredQuery 与缺参软空态
+
+搜索类虚拟目录在缺少必填查询参数时，`list` 返回软空态而非硬错误：
+
+- `entries` 为空数组
+- `error` 为 `null`
+- `requiredQuery` 声明缺参，例如 `[{ "key": "q", "label": "Query", "required": true }]`
+
+父目录列出这类子项时，子条目同样带 `requiredQuery`，便于 UI 在进入前展示查询框。有 `q` 时列表仍可附带 `requiredQuery`，方便界面回填。
+
+适用：`awam://search/everything`、`awam://prowlarr/search`、`awam://hf/remote`。
+
 ## 与本机路径互转
 
 - `awam://local/G:/a/b` ↔ `G:\a\b`

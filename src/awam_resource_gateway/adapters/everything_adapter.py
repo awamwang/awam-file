@@ -8,12 +8,16 @@ from awam_resource_gateway.adapters.base import Adapter
 from awam_resource_gateway.models import (
     BackendInfo,
     DirListing,
+    QueryParam,
     ResolveResult,
     ResourceEntry,
     SearchHit,
     StatResult,
 )
 from awam_resource_gateway.uri import AwamUri, local_path_to_uri
+
+# 搜索类目录的必填查询参数，缺参时返回软空态并供 UI 回填
+Q_PARAM = [QueryParam(key="q", label="Query", required=True)]
 
 
 class EverythingAdapter(Adapter):
@@ -54,6 +58,7 @@ class EverythingAdapter(Adapter):
                         is_dir=True,
                         is_file=False,
                         extra={"hint": "Append ?q=term to search"},
+                        required_query=Q_PARAM,
                     ),
                 ],
                 backend=self.backend_id,
@@ -73,7 +78,8 @@ class EverythingAdapter(Adapter):
                 uri=uri.to_string(),
                 entries=[],
                 backend=self.backend_id,
-                error="Missing query. Use awam://search/everything?q=term",
+                error=None,
+                required_query=Q_PARAM,
             )
 
         hits = self._run_es(query, limit=200)
@@ -101,9 +107,15 @@ class EverythingAdapter(Adapter):
                 entries=[],
                 backend=self.backend_id,
                 error=detail or "No Everything results (is Everything.exe UI/IPC running?)",
+                required_query=Q_PARAM,
             )
         entries = [h.entry for h in hits]
-        return DirListing(uri=uri.to_string(), entries=entries, backend=self.backend_id)
+        return DirListing(
+            uri=uri.to_string(),
+            entries=entries,
+            backend=self.backend_id,
+            required_query=Q_PARAM,
+        )
 
     def _run_es(self, query: str, limit: int = 100) -> list[SearchHit]:
         es = self._es_path()
