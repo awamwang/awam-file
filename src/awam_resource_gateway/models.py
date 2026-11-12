@@ -5,6 +5,19 @@ from typing import Any
 
 
 @dataclass
+class QueryParam:
+    key: str
+    label: str | None = None
+    required: bool = True
+
+    def to_dict(self) -> dict[str, Any]:
+        data: dict[str, Any] = {"key": self.key, "required": self.required}
+        if self.label is not None:
+            data["label"] = self.label
+        return data
+
+
+@dataclass
 class ResourceEntry:
     name: str
     uri: str
@@ -15,9 +28,13 @@ class ResourceEntry:
     mime: str | None = None
     local_path: str | None = None
     extra: dict[str, Any] = field(default_factory=dict)
+    required_query: list[QueryParam] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
+        data.pop("required_query", None)
+        if self.required_query is not None:
+            data["requiredQuery"] = [p.to_dict() for p in self.required_query]
         return data
 
 
@@ -27,9 +44,10 @@ class DirListing:
     entries: list[ResourceEntry]
     backend: str
     error: str | None = None
+    required_query: list[QueryParam] | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        data: dict[str, Any] = {
             "uri": self.uri,
             "backend": self.backend,
             "error": self.error,
@@ -38,6 +56,9 @@ class DirListing:
             "dir_count": sum(1 for e in self.entries if e.is_dir),
             "file_count": sum(1 for e in self.entries if e.is_file),
         }
+        if self.required_query is not None:
+            data["requiredQuery"] = [p.to_dict() for p in self.required_query]
+        return data
 
 
 @dataclass
