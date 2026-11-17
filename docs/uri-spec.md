@@ -23,7 +23,7 @@ awam://<backend>[/<path>][?<query>]
 | `rclone` | `awam://rclone/mysftp/var/www` | rclone remote（无挂载） |
 | `knowledge` | `awam://knowledge/logseq-main/pages` | `G:\Knowledge\data\` 下图谱 |
 | `downloads` | `awam://downloads/qb/` | qBittorrent 任务树 |
-| `prowlarr` | `awam://prowlarr/search?q=ubuntu` | 索引搜索。当前只使用搜索结果，不把结果送去下载 |
+| `prowlarr` | `awam://prowlarr/search?q=ubuntu` | 索引搜索。结果条目是 `awam://prowlarr/item?...`，`resolve` 返回可直接交给下载器的 magnet 或种子字节 |
 | `smb` | `awam://smb/` | 已映射共享与 `AWAM_SMB_ROOTS`，条目转到 `awam://local/unc/...` |
 | `volumes` | `awam://volumes/images` | 已附加 VHD/ISO 与 `awam://volumes/drives` 盘符。不执行挂载 |
 | `places` | `awam://places/recycle` | `recycle` / `recent` / `downloads` |
