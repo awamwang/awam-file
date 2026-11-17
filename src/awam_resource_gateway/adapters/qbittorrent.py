@@ -31,7 +31,15 @@ class QBittorrentAdapter(Adapter):
 
     def _get_client(self) -> httpx.Client:
         if self._client is None:
-            self._client = httpx.Client(base_url=self._base(), timeout=2.0)
+            # qBittorrent WebUI rejects API calls on a reused keep-alive
+            # connection after login (returns HTTP 404). Force a fresh
+            # connection per request; the client-level cookie jar still
+            # carries the SID, so the session stays valid.
+            self._client = httpx.Client(
+                base_url=self._base(),
+                timeout=2.0,
+                headers={"Connection": "close"},
+            )
             # login if password configured
             if self.config.qb_password or self.config.qb_username:
                 try:
