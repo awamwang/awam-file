@@ -54,7 +54,7 @@ awam://<backend>[/<path>][?<query>]
 ```json
 {
   "uri": "awam://rclone/mysftp/var/www/app.txt",
-  "local_path": "C:\\Users\\me\\Downloads\\awam-file\\mysftp\\app.txt",
+  "local_path": "C:\\Users\\<user>\\Downloads\\awam-file\\mysftp\\app.txt",
   "backend": "rclone",
   "size": 1234,
   "ok": true,

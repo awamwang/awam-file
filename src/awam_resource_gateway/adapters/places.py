@@ -148,7 +148,8 @@ class PlacesAdapter(Adapter):
     def _downloads(self, uri: AwamUri) -> DirListing:
         data, error = run_powershell_json(_DOWNLOADS_SCRIPT, timeout=15, exe=self.config.powershell_exe)
         user = str(Path.home() / "Downloads")
-        public = str(Path(os.environ.get("PUBLIC", r"C:\Users\Public")) / "Downloads")
+        public_root = os.environ.get("PUBLIC") or str(Path.home().parent / "Public")
+        public = str(Path(public_root) / "Downloads")
         if isinstance(data, dict):
             user = str(data.get("user") or user)
             public = str(data.get("public") or public)

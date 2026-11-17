@@ -11,3 +11,5 @@ build/
 *.log
 .env
 .env.*
+.workbuddy/
+.cursor/
