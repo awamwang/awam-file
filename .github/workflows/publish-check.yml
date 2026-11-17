@@ -1,0 +1,57 @@
+name: Publish preflight
+
+# Runs the same privacy/secret check used before making the repo public.
+# Blocking findings (critical/high) fail the job; the full report is uploaded
+# as an artifact even when the job fails.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          # gitleaks scans the entire commit history, so a shallow clone is not enough.
+          fetch-depth: 0
+          # Keep credentials out of .git/config; the check flags embedded remote credentials.
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install gitleaks
+        env:
+          GITLEAKS_VERSION: "8.30.1"
+        run: |
+          url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSL "$url" -o gitleaks.tar.gz
+          tar -xzf gitleaks.tar.gz -C /usr/local/bin gitleaks
+          rm -f gitleaks.tar.gz
+          gitleaks version
+
+      - name: Run publish preflight
+        run: python .github/scripts/preflight.py . --md preflight-report.md --json preflight-report.json
+
+      - name: Show report in log
+        if: always()
+        run: cat preflight-report.md
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preflight-report
+          path: |
+            preflight-report.md
+            preflight-report.json
+          if-no-files-found: ignore
