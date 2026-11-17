@@ -81,6 +81,22 @@ python -m awam_resource_gateway open-dopus "G:\Knowledge\data\logseq-main"
 
 解析出本机路径后调用 `dopusrt.exe /cmd Go "..."`.
 
+## 外部命令行工具的路径配置
+
+用到 CLI 的后端都可改可执行文件路径：写进项目根 `.env` 或系统环境变量（已存在的环境变量优先）。
+
+| 工具 | 环境变量 | 默认值 |
+|---|---|---|
+| kopia | `AWAM_KOPIA_EXE` | `kopia` |
+| Everything | `AWAM_ES_EXE` | `es.exe` |
+| rclone | `AWAM_RCLONE_EXE` | `rclone` |
+| Docker | `AWAM_DOCKER_EXE` | `docker` |
+| WSL | `AWAM_WSL_EXE` | `wsl.exe` |
+| PowerShell | `AWAM_POWERSHELL_EXE` | `powershell.exe` |
+| Directory Opus | `AWAM_DOPUSRT` | `C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe` |
+
+规则：填**纯命令名**走 PATH（找不到时 kopia/es 再查内置安装目录）；填**绝对路径**时必须真的存在，否则后端会直接报 `configured executable not found: ...`，不会再静默回退到内置路径——方便发现配错的路径。
+
 ## 前置条件备忘
 
 - Everything + `es.exe`：已用于搜索

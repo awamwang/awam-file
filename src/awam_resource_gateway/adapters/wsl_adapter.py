@@ -6,6 +6,7 @@ import subprocess
 
 from awam_resource_gateway.adapters.base import Adapter
 from awam_resource_gateway.adapters.local import LocalAdapter
+from awam_resource_gateway.config import resolve_executable
 from awam_resource_gateway.models import BackendInfo, DirListing, ResolveResult, ResourceEntry
 from awam_resource_gateway.uri import AwamUri, local_path_to_uri, parse_awam_uri
 
@@ -18,7 +19,7 @@ class WslAdapter(Adapter):
     description = "WSL distros via \\\\wsl.localhost (no autostart)"
 
     def health(self) -> BackendInfo:
-        distros, error = _distros()
+        distros, error = _distros(self.config.wsl_exe)
         if error:
             return self._info(False, error)
         running = sum(1 for item in distros if item[1].lower() == "running")
@@ -35,7 +36,7 @@ class WslAdapter(Adapter):
         )
 
     def list(self, uri: AwamUri) -> DirListing:
-        distros, error = _distros()
+        distros, error = _distros(self.config.wsl_exe)
         if error:
             return DirListing(uri=uri.to_string(), entries=[], backend=self.backend_id, error=error)
         if not uri.path:
@@ -64,7 +65,7 @@ class WslAdapter(Adapter):
         if not uri.path:
             return ResolveResult(uri=uri.to_string(), error="Pick a distro")
         distro, _, rest = uri.path.partition("/")
-        distros, error = _distros()
+        distros, error = _distros(self.config.wsl_exe)
         if error:
             return ResolveResult(uri=uri.to_string(), error=error)
         state = dict(distros).get(distro)
@@ -153,18 +154,21 @@ def _registry_base_paths() -> dict[str, str]:
     return found
 
 
-def _wsl_executable() -> str:
+def _wsl_executable(configured: str) -> tuple[str | None, str | None]:
     program_files = os.environ.get("ProgramFiles", r"C:\Program Files")
     packaged = os.path.join(program_files, "WSL", "wsl.exe")
-    if os.path.isfile(packaged):
-        return packaged
-    return "wsl.exe"
+    return resolve_executable(configured, fallbacks=[packaged])
 
 
-def _distros() -> tuple[list[tuple[str, str]], str | None]:
+def _distros(configured: str) -> tuple[list[tuple[str, str]], str | None]:
+    exe, exe_error = _wsl_executable(configured)
+    if exe_error:
+        return [], exe_error
+    if not exe:
+        return [], "wsl.exe not found on PATH"
     try:
         completed = subprocess.run(
-            [_wsl_executable(), "-l", "-v"],
+            [exe, "-l", "-v"],
             capture_output=True,
             timeout=8,
             check=False,

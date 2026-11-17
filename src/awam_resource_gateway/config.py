@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import shutil
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -42,6 +44,43 @@ def _apply_env_text(text: str) -> None:
 def _env(name: str, default: str) -> str:
     value = os.environ.get(name)
     return value if value not in (None, "") else default
+
+
+def resolve_executable(
+    configured: str,
+    fallbacks: Sequence[str | Path] = (),
+) -> tuple[str | None, str | None]:
+    """Locate a CLI executable described by config.
+
+    - A path-like `configured` value must exist; if it does not, return an
+      actionable error instead of silently falling back to a built-in path.
+    - A bare command name is looked up on PATH, then in `fallbacks`.
+    Returns (path, None) on success, (None, error) for an invalid explicit
+    path, or (None, None) when the tool is simply not installed.
+    """
+    if not configured:
+        return None, None
+    path_like = (
+        os.path.isabs(configured)
+        or os.path.sep in configured
+        or bool(os.path.altsep and os.path.altsep in configured)
+    )
+    if path_like:
+        direct = Path(configured)
+        if direct.is_file():
+            return str(direct), None
+        found = shutil.which(configured)
+        if found:
+            return found, None
+        return None, f"configured executable not found: {configured} (check the matching AWAM_* env var)"
+    found = shutil.which(configured)
+    if found:
+        return found, None
+    for item in fallbacks:
+        candidate = Path(item)
+        if candidate.is_file():
+            return str(candidate), None
+    return None, None
 
 
 @dataclass
@@ -94,6 +133,10 @@ class GatewayConfig:
     hf_cache: str = field(default_factory=lambda: _hf_cache_dir())
     kopia_exe: str = field(default_factory=lambda: _env("AWAM_KOPIA_EXE", "kopia"))
     docker_exe: str = field(default_factory=lambda: _env("AWAM_DOCKER_EXE", "docker"))
+    wsl_exe: str = field(default_factory=lambda: _env("AWAM_WSL_EXE", "wsl.exe"))
+    powershell_exe: str = field(
+        default_factory=lambda: _env("AWAM_POWERSHELL_EXE", "powershell.exe"),
+    )
     backends_ttl: float = field(
         default_factory=lambda: float(_env("AWAM_BACKENDS_TTL", "30")),
     )

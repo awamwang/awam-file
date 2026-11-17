@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import shutil
 import subprocess
 from pathlib import Path
 
 from awam_resource_gateway.adapters.base import Adapter
+from awam_resource_gateway.config import resolve_executable
 from awam_resource_gateway.models import (
     BackendInfo,
     DirListing,
@@ -27,15 +27,11 @@ class EverythingAdapter(Adapter):
     name = "Everything search"
     description = "Filename search via es.exe / Everything IPC"
 
-    def _es_path(self) -> str | None:
-        configured = self.config.everything_es
-        if Path(configured).is_file():
-            return configured
-        found = shutil.which(configured)
-        return found
+    def _es_path(self) -> tuple[str | None, str | None]:
+        return resolve_executable(self.config.everything_es)
 
     def health(self) -> BackendInfo:
-        es = self._es_path()
+        es, error = self._es_path()
         healthy = es is not None
         return BackendInfo(
             id=self.backend_id,
@@ -43,7 +39,7 @@ class EverythingAdapter(Adapter):
             description=self.description,
             healthy=healthy,
             capabilities=["list", "search", "resolve"],
-            detail=None if healthy else "es.exe not found on PATH",
+            detail=None if healthy else (error or "es.exe not found on PATH"),
         )
 
     def list(self, uri: AwamUri) -> DirListing:
@@ -84,8 +80,8 @@ class EverythingAdapter(Adapter):
 
         hits = self._run_es(query, limit=200)
         if not hits:
-            es = self._es_path()
-            detail = None
+            es, es_error = self._es_path()
+            detail = es_error
             if es:
                 try:
                     probe = subprocess.run(
@@ -118,7 +114,7 @@ class EverythingAdapter(Adapter):
         )
 
     def _run_es(self, query: str, limit: int = 100) -> list[SearchHit]:
-        es = self._es_path()
+        es, _ = self._es_path()
         if not es:
             return []
         # -n limit, -s sort by path, export path size date

@@ -93,7 +93,7 @@ class PlacesAdapter(Adapter):
         return ResolveResult(uri=uri.to_string(), error="Open an item; places root is virtual")
 
     def _recycle(self, uri: AwamUri) -> DirListing:
-        data, error = run_powershell_json(_RECYCLE_SCRIPT, timeout=30)
+        data, error = run_powershell_json(_RECYCLE_SCRIPT, timeout=30, exe=self.config.powershell_exe)
         if error:
             return DirListing(uri=uri.to_string(), entries=[], backend=self.backend_id, error=error)
         entries: list[ResourceEntry] = []
@@ -116,7 +116,7 @@ class PlacesAdapter(Adapter):
         return DirListing(uri=uri.to_string(), entries=entries, backend=self.backend_id)
 
     def _recent(self, uri: AwamUri) -> DirListing:
-        data, error = run_powershell_json(_RECENT_SCRIPT, timeout=25)
+        data, error = run_powershell_json(_RECENT_SCRIPT, timeout=25, exe=self.config.powershell_exe)
         if error:
             return DirListing(uri=uri.to_string(), entries=[], backend=self.backend_id, error=error)
         rows = as_rows(data)
@@ -146,7 +146,7 @@ class PlacesAdapter(Adapter):
         return DirListing(uri=uri.to_string(), entries=entries, backend=self.backend_id)
 
     def _downloads(self, uri: AwamUri) -> DirListing:
-        data, error = run_powershell_json(_DOWNLOADS_SCRIPT, timeout=15)
+        data, error = run_powershell_json(_DOWNLOADS_SCRIPT, timeout=15, exe=self.config.powershell_exe)
         user = str(Path.home() / "Downloads")
         public = str(Path(os.environ.get("PUBLIC", r"C:\Users\Public")) / "Downloads")
         if isinstance(data, dict):

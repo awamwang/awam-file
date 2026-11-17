@@ -83,7 +83,7 @@ class VolumesAdapter(Adapter):
                 backend=self.backend_id,
                 error="Use awam://volumes/images or awam://volumes/drives",
             )
-        data, error = run_powershell_json(_SCRIPT, timeout=20)
+        data, error = run_powershell_json(_SCRIPT, timeout=20, exe=self.config.powershell_exe)
         if error or not isinstance(data, dict):
             return DirListing(
                 uri=uri.to_string(),

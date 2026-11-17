@@ -55,7 +55,7 @@ class SmbAdapter(Adapter):
             )
         entries: list[ResourceEntry] = []
         seen: set[str] = set()
-        data, error = run_powershell_json(_LIST_SCRIPT, timeout=15)
+        data, error = run_powershell_json(_LIST_SCRIPT, timeout=15, exe=self.config.powershell_exe)
         if error:
             return DirListing(uri=uri.to_string(), entries=[], backend=self.backend_id, error=error)
         for row in as_rows(data):

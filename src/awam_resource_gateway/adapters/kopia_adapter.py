@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import json
 import os
-import shutil
 import subprocess
 from pathlib import Path
 
 from awam_resource_gateway.adapters.base import Adapter
+from awam_resource_gateway.config import resolve_executable
 from awam_resource_gateway.models import BackendInfo, DirListing, ResolveResult, ResourceEntry
 from awam_resource_gateway.uri import AwamUri
 
@@ -19,9 +19,12 @@ class KopiaAdapter(Adapter):
     description = "kopia snapshot list (no mount)"
 
     def health(self) -> BackendInfo:
-        exe = self._exe()
+        exe, error = self._exe()
         if not exe:
-            return self._info(False, "kopia CLI not found. Data dir may exist without the executable.")
+            return self._info(
+                False,
+                error or "kopia CLI not found. Data dir may exist without the executable.",
+            )
         return self._info(True, exe)
 
     def _info(self, healthy: bool, detail: str) -> BackendInfo:
@@ -35,13 +38,13 @@ class KopiaAdapter(Adapter):
         )
 
     def list(self, uri: AwamUri) -> DirListing:
-        exe = self._exe()
+        exe, error = self._exe()
         if not exe:
             return DirListing(
                 uri=uri.to_string(),
                 entries=[],
                 backend=self.backend_id,
-                error="kopia CLI not found",
+                error=error or "kopia CLI not found",
             )
         if uri.path:
             return DirListing(
@@ -95,18 +98,11 @@ class KopiaAdapter(Adapter):
     def resolve(self, uri: AwamUri) -> ResolveResult:
         return ResolveResult(uri=uri.to_string(), error="Kopia snapshots are not mounted by the gateway")
 
-    def _exe(self) -> str | None:
-        configured = self.config.kopia_exe
-        found = shutil.which(configured)
-        if found:
-            return found
+    def _exe(self) -> tuple[str | None, str | None]:
         local = os.environ.get("LOCALAPPDATA", "")
-        candidates = [
+        fallbacks = [
             Path(local) / "Programs" / "Kopia" / "kopia.exe",
             Path(r"C:\Program Files\Kopia\kopia.exe"),
             Path(r"C:\Program Files\KopiaUI\kopia.exe"),
         ]
-        for candidate in candidates:
-            if candidate.is_file():
-                return str(candidate)
-        return None
+        return resolve_executable(self.config.kopia_exe, fallbacks=fallbacks)

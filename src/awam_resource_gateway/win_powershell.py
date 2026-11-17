@@ -5,11 +5,15 @@ import subprocess
 from typing import Any
 
 
-def run_powershell_json(script: str, timeout: int = 25) -> tuple[Any, str | None]:
+def run_powershell_json(
+    script: str,
+    timeout: int = 25,
+    exe: str = "powershell.exe",
+) -> tuple[Any, str | None]:
     """Run a PowerShell script that prints JSON. Returns (data, error)."""
     try:
         completed = subprocess.run(
-            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
+            [exe, "-NoProfile", "-NonInteractive", "-Command", script],
             capture_output=True,
             timeout=timeout,
             check=False,
