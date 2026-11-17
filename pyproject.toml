@@ -2,7 +2,7 @@
 name = "awam-resource-gateway"
 version = "0.1.0"
 description = "Unified awam:// resource gateway (MCP + localhost HTTP) for Sigma/AI/DOpus"
-readme = "SKILL.md"
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
   "mcp>=2.0",
