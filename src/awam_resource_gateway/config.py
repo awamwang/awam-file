@@ -94,6 +94,9 @@ class GatewayConfig:
     hf_cache: str = field(default_factory=lambda: _hf_cache_dir())
     kopia_exe: str = field(default_factory=lambda: _env("AWAM_KOPIA_EXE", "kopia"))
     docker_exe: str = field(default_factory=lambda: _env("AWAM_DOCKER_EXE", "docker"))
+    backends_ttl: float = field(
+        default_factory=lambda: float(_env("AWAM_BACKENDS_TTL", "30")),
+    )
 
 
 def _download_dir() -> str:

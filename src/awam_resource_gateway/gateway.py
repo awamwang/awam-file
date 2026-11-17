@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import subprocess
+import threading
+import time
 from pathlib import Path
 from typing import Any
 
@@ -55,9 +57,34 @@ class ResourceGateway:
             FileHistoryAdapter(self.config),
         ]
         self._adapters: dict[str, Adapter] = {a.backend_id: a for a in adapters}
+        self._backends_cache: list[BackendInfo] | None = None
+        self._backends_cache_at: float = 0.0
+        self._backends_lock = threading.Lock()
 
-    def backends(self) -> list[BackendInfo]:
-        return [a.health() for a in self._adapters.values()]
+    def backends(self, *, force: bool = False) -> list[BackendInfo]:
+        """Return backend health, cached for `backends_ttl` seconds.
+
+        Each `health()` probe can spawn a subprocess with multi-second timeouts;
+        running all 14 on every UI refresh blocks and makes the gateway appear
+        offline. Caching keeps refreshes instant while `force=True` still allows
+        an explicit rescan.
+        """
+        now = time.monotonic()
+        ttl = max(0.0, self.config.backends_ttl)
+        with self._backends_lock:
+            cached = self._backends_cache
+            if (
+                not force
+                and cached is not None
+                and (now - self._backends_cache_at) < ttl
+            ):
+                return list(cached)
+        # Probe outside the lock so concurrent callers never serialize on it.
+        result = [a.health() for a in self._adapters.values()]
+        with self._backends_lock:
+            self._backends_cache = result
+            self._backends_cache_at = time.monotonic()
+        return list(result)
 
     def _adapter(self, backend: str) -> Adapter:
         if backend == "root":

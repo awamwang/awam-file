@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 from typing import Any
@@ -27,35 +28,47 @@ def create_app(gateway: ResourceGateway | None = None) -> Starlette:
     async def filesystems_page(_: Request) -> HTMLResponse:
         return HTMLResponse(_FILESYSTEMS_HTML)
 
-    async def backends(_: Request) -> JSONResponse:
-        return _json({"backends": [b.to_dict() for b in gw.backends()]})
+    async def backends(request: Request) -> JSONResponse:
+        force = request.query_params.get("refresh") == "1"
+        data = await asyncio.to_thread(
+            lambda: [b.to_dict() for b in gw.backends(force=force)]
+        )
+        return _json({"backends": data})
 
     async def res_list(request: Request) -> JSONResponse:
         uri = request.query_params.get("uri") or "awam://root/"
         sigma = request.query_params.get("sigma") == "1"
         if sigma:
-            return _json(gw.sigma_dir_contents(uri))
-        return _json(gw.list(uri).to_dict())
+            data = await asyncio.to_thread(gw.sigma_dir_contents, uri)
+            return _json(data)
+        data = await asyncio.to_thread(gw.list, uri)
+        return _json(data.to_dict())
 
     async def res_stat(request: Request) -> JSONResponse:
         uri = request.query_params.get("uri") or ""
-        return _json(gw.stat(uri).to_dict())
+        data = await asyncio.to_thread(gw.stat, uri)
+        return _json(data.to_dict())
 
     async def res_read(request: Request) -> JSONResponse:
         uri = request.query_params.get("uri") or ""
         max_bytes = request.query_params.get("max_bytes")
         mb = int(max_bytes) if max_bytes else None
-        return _json(gw.read(uri, max_bytes=mb).to_dict())
+        data = await asyncio.to_thread(lambda: gw.read(uri, max_bytes=mb))
+        return _json(data.to_dict())
 
     async def res_search(request: Request) -> JSONResponse:
         q = request.query_params.get("q") or request.query_params.get("query") or ""
         backend = request.query_params.get("backend")
         limit = int(request.query_params.get("limit") or "100")
-        return _json({"query": q, "hits": gw.search(q, backend=backend, limit=limit)})
+        hits = await asyncio.to_thread(
+            lambda: gw.search(q, backend=backend, limit=limit)
+        )
+        return _json({"query": q, "hits": hits})
 
     async def res_resolve(request: Request) -> JSONResponse:
         uri = request.query_params.get("uri") or ""
-        return _json(gw.resolve(uri).to_dict())
+        data = await asyncio.to_thread(gw.resolve, uri)
+        return _json(data.to_dict())
 
     async def res_download(request: Request) -> JSONResponse:
         if request.method == "POST":
@@ -66,7 +79,8 @@ def create_app(gateway: ResourceGateway | None = None) -> Starlette:
             uri = str(body.get("uri") or request.query_params.get("uri") or "")
         else:
             uri = request.query_params.get("uri") or ""
-        return _json(gw.download(uri).to_dict())
+        data = await asyncio.to_thread(gw.download, uri)
+        return _json(data.to_dict())
 
     async def open_dopus(request: Request) -> JSONResponse:
         if request.method == "POST":
@@ -77,11 +91,13 @@ def create_app(gateway: ResourceGateway | None = None) -> Starlette:
             uri = body.get("uri") or request.query_params.get("uri") or ""
         else:
             uri = request.query_params.get("uri") or ""
-        return _json(gw.open_in_dopus(uri))
+        data = await asyncio.to_thread(gw.open_in_dopus, uri)
+        return _json(data)
 
     async def sigma_list(request: Request) -> JSONResponse:
         uri = request.query_params.get("uri") or "awam://root/"
-        return _json(gw.sigma_dir_contents(uri))
+        data = await asyncio.to_thread(gw.sigma_dir_contents, uri)
+        return _json(data)
 
     async def push_to_downloads(request: Request) -> JSONResponse:
         if request.method == "POST":
@@ -92,7 +108,8 @@ def create_app(gateway: ResourceGateway | None = None) -> Starlette:
             uri = str(body.get("uri") or request.query_params.get("uri") or "")
         else:
             uri = request.query_params.get("uri") or ""
-        return _json(gw.push_to_downloads(uri))
+        data = await asyncio.to_thread(gw.push_to_downloads, uri)
+        return _json(data)
 
     routes = [
         Route("/health", health),
