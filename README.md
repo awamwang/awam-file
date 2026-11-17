@@ -1,5 +1,7 @@
 # awam-file
 
+[![Publish preflight](https://github.com/awamwang/awam-file/actions/workflows/publish-check.yml/badge.svg)](https://github.com/awamwang/awam-file/actions/workflows/publish-check.yml)
+
 A unified resource gateway built around `awam://` URIs. It exposes local disks, Everything search, rclone remotes, a Logseq knowledge base, qBittorrent downloads, and several other sources behind one consistent API — so file managers and AI agents can all talk to the same set of resources with the same semantics.
 
 Clients that speak this API today:
