@@ -9,6 +9,7 @@ from awam_resource_gateway.adapters.base import Adapter
 from awam_resource_gateway.models import (
     BackendInfo,
     DirListing,
+    DownloadResult,
     ReadResult,
     ResolveResult,
     ResourceEntry,
@@ -60,7 +61,7 @@ class RcloneAdapter(Adapter):
                 name=self.name,
                 description=self.description,
                 healthy=result.returncode == 0,
-                capabilities=["list", "stat", "read", "resolve"],
+                capabilities=["list", "stat", "read", "resolve", "download"],
                 detail=detail,
             )
         except (OSError, subprocess.TimeoutExpired) as exc:
@@ -252,7 +253,64 @@ class RcloneAdapter(Adapter):
         spec = self._remote_spec(uri)
         return ResolveResult(
             uri=uri.to_string(),
-            action="rclone_path",
+            action="download" if spec and not spec.endswith(":") else None,
             action_args={"rclone_spec": spec} if spec else {},
-            error="rclone paths are remote; use list/copy via rclone CLI",
+        )
+
+    def download(self, uri: AwamUri, dest_dir: str) -> DownloadResult:
+        """Copy a single remote file to dest_dir via `rclone copyto` (binary-safe)."""
+        from pathlib import Path
+
+        spec = self._remote_spec(uri)
+        if not spec or spec.endswith(":"):
+            return DownloadResult(
+                uri=uri.to_string(),
+                backend=self.backend_id,
+                error="Not a remote file (directory or root)",
+            )
+        exe = self._rclone()
+        if not exe:
+            return DownloadResult(
+                uri=uri.to_string(), backend=self.backend_id, error="rclone not found on PATH"
+            )
+        name = spec.rstrip("/").rsplit("/", 1)[-1] or "download"
+        remote = spec.split(":", 1)[0] or "rclone"
+        destination = Path(dest_dir) / remote
+        destination.mkdir(parents=True, exist_ok=True)
+        target = destination / name
+        try:
+            result = self._run(
+                [
+                    "copyto",
+                    spec,
+                    str(target),
+                    "--contimeout",
+                    "8s",
+                    "--timeout",
+                    "120s",
+                    "--retries",
+                    "1",
+                    "--low-level-retries",
+                    "1",
+                    "--no-traverse",
+                ],
+                timeout=180,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            return DownloadResult(
+                uri=uri.to_string(), backend=self.backend_id, error=str(exc)
+            )
+        if result.returncode != 0 or not target.exists():
+            return DownloadResult(
+                uri=uri.to_string(),
+                backend=self.backend_id,
+                error=(result.stderr or result.stdout or "rclone copyto failed").strip(),
+            )
+        return DownloadResult(
+            uri=uri.to_string(),
+            local_path=str(target),
+            backend=self.backend_id,
+            size=target.stat().st_size,
+            ok=True,
+            action="downloaded",
         )

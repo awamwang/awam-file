@@ -85,6 +85,7 @@ class GatewayConfig:
     read_max_bytes: int = field(
         default_factory=lambda: int(_env("AWAM_READ_MAX_BYTES", str(512 * 1024))),
     )
+    download_dir: str = field(default_factory=lambda: _download_dir())
     smb_roots: str = field(default_factory=lambda: _env("AWAM_SMB_ROOTS", ""))
     wsl_roots: str = field(default_factory=lambda: _env("AWAM_WSL_ROOTS", ""))
     hf_endpoint: str = field(
@@ -93,6 +94,13 @@ class GatewayConfig:
     hf_cache: str = field(default_factory=lambda: _hf_cache_dir())
     kopia_exe: str = field(default_factory=lambda: _env("AWAM_KOPIA_EXE", "kopia"))
     docker_exe: str = field(default_factory=lambda: _env("AWAM_DOCKER_EXE", "docker"))
+
+
+def _download_dir() -> str:
+    explicit = os.environ.get("AWAM_DOWNLOAD_DIR")
+    if explicit:
+        return explicit
+    return str(Path.home() / "Downloads" / "awam-file")
 
 
 def _hf_cache_dir() -> str:

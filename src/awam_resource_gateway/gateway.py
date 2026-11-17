@@ -25,6 +25,7 @@ from awam_resource_gateway.config import GatewayConfig, load_config
 from awam_resource_gateway.models import (
     BackendInfo,
     DirListing,
+    DownloadResult,
     ReadResult,
     ResolveResult,
     ResourceEntry,
@@ -143,6 +144,30 @@ class ResourceGateway:
             return self._adapter(uri.backend).resolve(uri)
         except KeyError as exc:
             return ResolveResult(uri=uri_str, error=str(exc))
+
+    def download(self, uri_str: str) -> DownloadResult:
+        """Materialize a virtual file to a local path. Local-backed entries are
+        returned as-is; virtual backends copy into the configured download dir."""
+        uri = parse_awam_uri(uri_str)
+        if uri.backend == "root":
+            return DownloadResult(uri=uri_str, error="Cannot download root")
+        try:
+            adapter = self._adapter(uri.backend)
+        except KeyError as exc:
+            return DownloadResult(uri=uri_str, error=str(exc))
+
+        resolved = adapter.resolve(uri)
+        local = resolved.local_path
+        if local and Path(local).exists():
+            return DownloadResult(
+                uri=uri_str,
+                local_path=local,
+                backend=uri.backend,
+                size=Path(local).stat().st_size,
+                ok=True,
+                action="local",
+            )
+        return adapter.download(uri, self.config.download_dir)
 
     def push_to_downloads(self, uri_str: str) -> dict[str, Any]:
         """Send a Prowlarr result magnet/URL to qBittorrent. Does not add anything else."""

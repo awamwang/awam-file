@@ -41,10 +41,34 @@ awam://<backend>[/<path>][?<query>]
 | `stat` | 单条目元数据 |
 | `read` | 读文本或小文件内容 |
 | `search` | 跨后端或指定后端搜索 |
-| `resolve` | URI → 本机 path 与/或外部动作（如 DOpus GO） |
+| `resolve` | URI → 本机 path 与/或外部动作（如 DOpus GO）；虚拟远程文件返回 `action: "download"` |
+| `download` | 把虚拟文件落地为本机路径（虚拟后端）或直接返回已有本机路径（本地后端） |
 | `backends` | 后端能力与健康状态 |
 
 破坏性写操作（远端删除等）需显式 `allow_destructive=true`。
+
+## download：虚拟文件落地
+
+`POST /api/download`（或 `GET`，`?uri=`）返回 `DownloadResult`：
+
+```json
+{
+  "uri": "awam://rclone/mysftp/var/www/app.txt",
+  "local_path": "C:\\Users\\me\\Downloads\\awam-file\\mysftp\\app.txt",
+  "backend": "rclone",
+  "size": 1234,
+  "ok": true,
+  "truncated": false,
+  "action": "downloaded",
+  "error": null
+}
+```
+
+- 本地后端（`knowledge` / `smb` / `wsl` / `volumes` / `places` / `hf` 缓存）：`resolve` 已有真实路径时直接返回，`action: "local"`，不复制。
+- 虚拟后端（`rclone`）：`rclone copyto <spec> <下载目录>/<remote>/<文件名>`，二进制安全，`action: "downloaded"`。
+- 下载根目录由 `AWAM_DOWNLOAD_DIR` 配置，默认 `~/Downloads/awam-file`；按 remote 建子目录避免同名冲突。
+- 目录 / 根 URI 不可下载，`ok: false` + `error`。
+- UI 接入端拿到 `local_path` 后在文件管理器中定位；本网关不负责打开文件。
 
 ## requiredQuery 与缺参软空态
 

@@ -35,6 +35,9 @@ def main(argv: list[str] | None = None) -> None:
     push_p = sub.add_parser("push-to-downloads", help="Push a Prowlarr item URI to qBittorrent")
     push_p.add_argument("uri")
 
+    download_p = sub.add_parser("download", help="Download a virtual file to a local path")
+    download_p.add_argument("uri")
+
     sub.add_parser("backends", help="Show backends")
 
     args = parser.parse_args(argv)
@@ -79,6 +82,10 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.cmd == "push-to-downloads":
         print(json.dumps(gw.push_to_downloads(args.uri), ensure_ascii=False, indent=2))
+        return
+
+    if args.cmd == "download":
+        print(json.dumps(gw.download(args.uri).to_dict(), ensure_ascii=False, indent=2))
         return
 
     if args.cmd == "backends":

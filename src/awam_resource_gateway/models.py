@@ -99,6 +99,23 @@ class ResolveResult:
 
 
 @dataclass
+class DownloadResult:
+    """Materialize a virtual entry to a local file the UI can open."""
+
+    uri: str
+    local_path: str | None = None
+    backend: str | None = None
+    size: int = 0
+    ok: bool = False
+    truncated: bool = False
+    action: str = "downloaded"
+    error: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
 class BackendInfo:
     id: str
     name: str
