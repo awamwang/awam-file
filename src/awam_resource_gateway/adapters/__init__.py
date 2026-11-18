@@ -1,4 +1,5 @@
 from awam_resource_gateway.adapters.base import Adapter
+from awam_resource_gateway.adapters.browser import BrowserAdapter
 from awam_resource_gateway.adapters.docker_volumes import DockerVolumesAdapter
 from awam_resource_gateway.adapters.everything_adapter import EverythingAdapter
 from awam_resource_gateway.adapters.filehistory import FileHistoryAdapter
@@ -25,6 +26,7 @@ __all__ = [
     "SmbAdapter",
     "VolumesAdapter",
     "PlacesAdapter",
+    "BrowserAdapter",
     "HuggingFaceAdapter",
     "WslAdapter",
     "DockerVolumesAdapter",

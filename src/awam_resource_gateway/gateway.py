@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from awam_resource_gateway.adapters import (
+    BrowserAdapter,
     DockerVolumesAdapter,
     EverythingAdapter,
     FileHistoryAdapter,
@@ -50,6 +51,7 @@ class ResourceGateway:
             SmbAdapter(self.config),
             VolumesAdapter(self.config),
             PlacesAdapter(self.config),
+            BrowserAdapter(self.config),
             HuggingFaceAdapter(self.config),
             WslAdapter(self.config),
             DockerVolumesAdapter(self.config),
@@ -65,7 +67,7 @@ class ResourceGateway:
         """Return backend health, cached for `backends_ttl` seconds.
 
         Each `health()` probe can spawn a subprocess with multi-second timeouts;
-        running all 14 on every UI refresh blocks and makes the gateway appear
+        running all adapters on every UI refresh blocks and makes the gateway appear
         offline. Caching keeps refreshes instant while `force=True` still allows
         an explicit rescan.
         """

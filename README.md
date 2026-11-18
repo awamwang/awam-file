@@ -77,6 +77,7 @@ python -m awam_resource_gateway open-dopus "awam://knowledge/logseq-main"
 | `awam://places/recycle` | Recycle bin |
 | `awam://places/recent` | Recently used files |
 | `awam://places/downloads` | User and Public download folders |
+| `awam://browser/` | Browser bookmarks (Chrome + Edge first); `resolve` → `open_url` |
 | `awam://hf/cache/` | Local Hugging Face hub cache |
 | `awam://wsl/<distro>/` | List distributions (stopped ones are not started) |
 | `awam://docker/` | Volume metadata while the engine is running |

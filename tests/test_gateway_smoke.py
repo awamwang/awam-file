@@ -14,6 +14,7 @@ def test_backends_present():
         "smb",
         "volumes",
         "places",
+        "browser",
         "hf",
         "wsl",
         "docker",

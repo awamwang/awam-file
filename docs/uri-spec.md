@@ -27,6 +27,7 @@ awam://<backend>[/<path>][?<query>]
 | `smb` | `awam://smb/` | 已映射共享与 `AWAM_SMB_ROOTS`，条目转到 `awam://local/unc/...` |
 | `volumes` | `awam://volumes/images` | 已附加 VHD/ISO 与 `awam://volumes/drives` 盘符。不执行挂载 |
 | `places` | `awam://places/recycle` | `recycle` / `recent` / `downloads` |
+| `browser` | `awam://browser/edge/...` | Chrome / Edge 收藏夹（Bookmarks JSON）；`resolve` 返回 `open_url` |
 | `hf` | `awam://hf/cache/` | 本地 hub；`awam://hf/remote?q=` 走 `HF_ENDPOINT` |
 | `wsl` | `awam://wsl/<distro>/home` | `\\wsl.localhost\<distro>`。停止的发行版不会被启动 |
 | `docker` | `awam://docker/<volume>` | 引擎未运行时 unavailable。VM 内挂载点只返回元数据 |

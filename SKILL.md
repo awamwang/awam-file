@@ -52,6 +52,7 @@ python -m awam_resource_gateway open-dopus "awam://knowledge/logseq-main"
 | `awam://places/recycle` | 回收站 |
 | `awam://places/recent` | 最近使用 |
 | `awam://places/downloads` | 用户与 Public 下载目录 |
+| `awam://browser/` | 浏览器收藏夹（先 Chrome/Edge）；`resolve` → `open_url` |
 | `awam://hf/cache/` | Hugging Face 本地 hub 缓存 |
 | `awam://hf/remote?q=` | 模型搜索，地址来自 `HF_ENDPOINT` |
 | `awam://wsl/<distro>/` | 仅列出；停止的发行版不会被启动 |
