@@ -1,0 +1,36 @@
+{
+  "_readme": "awam-skill-eval 生成：意图路由评测集。正例=描述触发场景；负例=confusable sibling 的「看起来像但不该触发」边界例。只读评测资产。",
+  "_skill": "awam-file",
+  "_n_pos": 4,
+  "_n_neg": 3,
+  "queries": [
+    {
+      "text": "用 Everything 搜一下文件名含 report 的",
+      "expect_trigger": true
+    },
+    {
+      "text": "列出我配置的 rclone 远端",
+      "expect_trigger": true
+    },
+    {
+      "text": "在 Logseq 知识库里搜一下相关笔记",
+      "expect_trigger": true
+    },
+    {
+      "text": "qBittorrent 现在有哪些下载任务",
+      "expect_trigger": true
+    },
+    {
+      "text": "把为知笔记的 .ziw 迁移导出成 Markdown",
+      "expect_trigger": false
+    },
+    {
+      "text": "下载这个喜马拉雅专辑的音频",
+      "expect_trigger": false
+    },
+    {
+      "text": "查一下今天的热门股票榜单",
+      "expect_trigger": false
+    }
+  ]
+}

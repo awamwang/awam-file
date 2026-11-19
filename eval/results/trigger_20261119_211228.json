@@ -1,0 +1,57 @@
+{
+  "metrics": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "tp": 4,
+    "fp": 0,
+    "fn": 0,
+    "tn": 3
+  },
+  "question": null,
+  "rows": [
+    {
+      "text": "用 Everything 搜一下文件名含 report 的",
+      "expect": true,
+      "predicted": true,
+      "raw": "yes"
+    },
+    {
+      "text": "列出我配置的 rclone 远端",
+      "expect": true,
+      "predicted": true,
+      "raw": "yes"
+    },
+    {
+      "text": "在 Logseq 知识库里搜一下相关笔记",
+      "expect": true,
+      "predicted": true,
+      "raw": "yes"
+    },
+    {
+      "text": "qBittorrent 现在有哪些下载任务",
+      "expect": true,
+      "predicted": true,
+      "raw": "yes"
+    },
+    {
+      "text": "把为知笔记的 .ziw 迁移导出成 Markdown",
+      "expect": false,
+      "predicted": false,
+      "raw": "no"
+    },
+    {
+      "text": "下载这个喜马拉雅专辑的音频",
+      "expect": false,
+      "predicted": false,
+      "raw": "no"
+    },
+    {
+      "text": "查一下今天的热门股票榜单",
+      "expect": false,
+      "predicted": false,
+      "raw": "no"
+    }
+  ]
+}
